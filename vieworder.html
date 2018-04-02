@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bob's Auto Parts - Order Form - JSON Edition</title>
+    <meta charset="utf-8">
+</head>
+<style>
+    /* box with title example: http://stackoverflow.com/a/2936888 */
+    .title_box {
+        border: #000000 1px solid;
+    }
+
+    .title_box_title {
+        position: relative;
+        top: -0.5em;
+        margin-left: 1em;
+        display: inline;
+        background-color: white;
+    }
+
+    .title_box_content {
+        margin: 10px;
+    }
+</style>
+<body>
+
+<script>
+    // the JavaScript function send_json_data is run when the submit button is clicked
+    // based on https://stackoverflow.com/a/46112782
+    function send_json_data() {
+        // use JavaScript to put the form data into a JavaScript object
+        const form_data = {
+            order_number: document.getElementById("bobs_order_form").elements.namedItem("ordernumber").value
+        }
+        // display the JSON for the form_data object on the page
+        document.getElementById("json_form_data").innerHTML = JSON.stringify(form_data)
+
+        // use a XMLHttpRequest object to build and send a JSON request to PHP
+        const http_post_request = new XMLHttpRequest()
+        // HTTP method is post, action is process_order_json.php, and asynchronous is true
+        http_post_request.open('POST', 'vieworder_json.php', true)
+        // tell the web server (and PHP) that the data being sent is JSON
+        http_post_request.setRequestHeader('Content-type', 'application/json')
+        // send the form_data object as JSON
+        http_post_request.send(JSON.stringify(form_data))
+        // to cause an error, comment out the above line and uncomment the next line:
+        //http_post_request.send('asdf')
+
+        // when the HTTP post request finishes and the result is returned form the server, the following
+        // function will be called
+        http_post_request.onload = function () {
+            // show the PHP response on the page
+            document.getElementById("json_php_output").innerHTML = http_post_request.responseText
+            // parse the response assuming it is JSON
+            const order_result = JSON.parse(http_post_request.responseText)
+
+            // if PHP had a problem decoding the JSON form data, it will set the error_message attribute
+            if (order_result.error_message != null) {
+                document.getElementById("order_result").innerHTML = "There was an error getting your order!\n"
+                document.getElementById("order_result").innerHTML += order_result.error_message
+            } else {
+                // display the information returned from PHP on the page
+                document.getElementById("order_result").innerHTML = "Order Number: " + order_result.order_number + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Order Date: " + order_result.order_date + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Tires: " + order_result.tireqty + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Bottles of oil: " + order_result.oilqty + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Spark plugs: " + order_result.sparkqty + "</br>\n"
+                document.getElementById("order_result").innerHTML += "How did you find Bob\'s: " + order_result.howfind + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Notes: " + order_result.notes + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Total qty: " + order_result.totalqty + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Subtotal $: " + order_result.subtotal + "</br>\n"
+                document.getElementById("order_result").innerHTML += "Total including tax: " + order_result.total + "</br>\n"
+            }
+        }
+    }
+</script>
+<!-- note that the order form is named bobs_order_form to make it easier for JavaScript to access its input fields -->
+<form id="bobs_order_form">
+    <table style="border: 0px;">
+        <tr style="background: #cccccc;">
+            <td style="width: 150px; text-align: center;">Order Number</td>
+            <td style="width: 15px; text-align: center;"><input type="text" name="ordernumber" size="5" maxlength="5"/></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center;">
+                <!-- when the submit button is clicked, we want our JavaScript function send_json_data to run -->
+                <!-- the return false causes the browser to not submit the form itself since we are using JavaScript to do that -->
+                <input type="submit" onclick="send_json_data(); return false" value="View Order"/>
+            </td>
+        </tr>
+    </table>
+</form>
+<br/>
+
+<!-- the output sections below are manipulated by JavaScript -->
+<div class="title_box">
+    <div class="title_box_title">JSON sent to PHP from JavaScript</div>
+    <div class="title_box_content" id="json_form_data">
+    </div>
+</div>
+
+<br/>
+
+<div class="title_box">
+    <div class="title_box_title">JSON received from PHP to JavaScript</div>
+    <div class="title_box_content" id="json_php_output">
+    </div>
+</div>
+
+<br/>
+
+<div class="title_box">
+    <div class="title_box_title">Order Result (JSON parsed from PHP by JavaScript)</div>
+    <div class="title_box_content" id="order_result">
+    </div>
+</div>
+
+</body>
+</html>
